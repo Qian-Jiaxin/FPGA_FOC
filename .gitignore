@@ -1,0 +1,13 @@
+#参考资料及产品说明
+Materials
+#工程文件
+Project/db
+Project/greybox_tmp
+Project/incremental_db
+Project/output_files
+Project/*.qsf
+Project/*.qws
+#调试文件
+Debug
+#备份文件
+*.bak
