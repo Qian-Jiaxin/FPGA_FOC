@@ -5,6 +5,7 @@ Project/db
 Project/greybox_tmp
 Project/incremental_db
 Project/output_files
+Project/simulation
 Project/*.qsf
 Project/*.qws
 #调试文件
