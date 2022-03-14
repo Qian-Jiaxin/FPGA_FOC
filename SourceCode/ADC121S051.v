@@ -148,8 +148,6 @@ module ADC121S051(
                     default: ;
                 endcase
             end
-            // else if(nsclk_gen_count == 5'd19) begin
-            // else if((nsclk_count == 5'd14) & (nsclk_gen_count == 5'd19)) begin
             else if(nsclk_count == 5'd15) begin
                 oUbus[11] <= (ntemp_11 >= 3'd4) ? 1'b1:1'b0;
                 oUbus[10] <= (ntemp_10 >= 3'd4) ? 1'b1:1'b0;
