@@ -95,7 +95,7 @@ module FOC(
                 S3: begin
                     if(nmodulate_done) begin
                         ncdt_en <= 1'b1;
-                        ncl_en <= 1'b1;
+                        // ncl_en <= 1'b1;
                     end 
                     else begin
                         ncdt_en <= 1'b0;
@@ -132,8 +132,12 @@ module FOC(
         .iCL_en(ncl_en),
         .iSin(nsin),
         .iCos(ncos),
-        // .iId_set(),
-        // .iIq_set(),
+        .iId_set(12'd0),
+        .iIq_set(12'd200),
+        .iKp_d(10'd1023),
+        .iKi_d(10'd1023),
+        .iKp_q(10'd1023),
+        .iKi_q(10'd1023),
         .iADC124_MISO(iADC124_MISO),
         .oADC124_CS_n(oADC124_CS_n),
         .oADC124_SCLK(oADC124_SCLK),

@@ -8,9 +8,7 @@ module Corder_DataTreat(
     oSin,
     oCos,
     oWarning,
-    oDone,
-
-    ntheta_elec
+    oDone
 );
     input wire iClk;
     input wire iRst_n;
@@ -25,7 +23,7 @@ module Corder_DataTreat(
     localparam POLE_PAIRS = 3'd5;
     localparam SPECIAL_ANGLE = 20'd1048575;
 
-    output reg [19:0] ntheta_elec;
+    reg [19:0] ntheta_elec;
     reg ncordic_cal_en;
     reg nnikon_rd_done_pre_state;
     // reg [19:0] ntheta;

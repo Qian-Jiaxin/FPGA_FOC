@@ -4,8 +4,12 @@ module Current_Loop(
     iCL_en,
     iSin,
     iCos,
-    // iId_set,
-    // iIq_set,
+    iId_set,
+    iIq_set,
+    iKp_d,
+    iKi_d,
+    iKp_q,
+    iKi_q,
     iADC124_MISO,
     oADC124_CS_n,
     oADC124_SCLK,
@@ -19,7 +23,8 @@ module Current_Loop(
     input wire iRst_n;
     input wire iCL_en;
     input wire [15:0] iSin,iCos;
-    // input wire [11:0] iId_set,iIq_set;
+    input wire [11:0] iId_set,iIq_set;
+    input wire [9:0] iKp_d,iKi_d,iKp_q,iKi_q;
     input wire iADC124_MISO;
     output wire oADC124_CS_n;
     output wire oADC124_SCLK;
@@ -27,18 +32,20 @@ module Current_Loop(
     output wire oPWM_u,oPWM_v,oPWM_w;
     output wire oModulate_done;
 
+    wire nip_en;
     wire [15:0] nvd,nvq;
     wire [15:0] nvalpha,nvbeta;
     wire [11:0] nid_current,niq_current;
     wire nip_done,nadc_treat_done,npical_done;
 
-    assign nvd = 16'd0;
-    assign nvq = -16'd1000;
+    // assign nvd = 16'd0;
+    // assign nvq = -16'd3000;
 
+    assign nip_en = iCL_en | oModulate_done;
     Inv_Park inv_park(
         .iClk(iClk),
         .iRst_n(iRst_n),
-        .iIP_en(iCL_en),
+        .iIP_en(nip_en),
         .iSin(iSin),
         .iCos(iCos),
         .iVd(nvd),
@@ -75,32 +82,21 @@ module Current_Loop(
         .oDone(nadc_treat_done)
     );
 
-    // Current_Loop_PI #(
-    //     parameter Kp = 10'd1023,
-    //     parameter KI = 10'd1023
-    // )
-    // id_pi (
-    //     .iClk(iClk),
-    //     .iRst_n(iRst_n),
-    //     .iTarget_data(iId_set),
-    //     .iCurrent_data(nid_current),  
-    //     .iCal_en(nadc_treat_done),
-    //     .oCal_data(nvd),
-    //     .oCal_done(npical_done)
-    // );
-
-    // Current_Loop_PI #(
-    //     parameter Kp = 10'd1023,
-    //     parameter KI = 10'd1023
-    // )
-    // iq_pi (
-    //     .iClk(iClk),
-    //     .iRst_n(iRst_n),
-    //     .iTarget_data(iIq_set),
-    //     .iCurrent_data(nid_current),  
-    //     .iCal_en(nadc_treat_done),
-    //     .oCal_data(nvq),
-    //     .oCal_done(npical_done)
-    // );
+    Current_Loop_PI pi(
+        .iClk(iClk),
+        .iRst_n(iRst_n),
+        .iTarget_d(iId_set),
+        .iCurrent_d(nid_current),
+        .iKp_d(iKp_d),
+        .iKi_d(iKi_d),
+        .iTarget_q(iIq_set),
+        .iCurrent_q(niq_current),
+        .iKp_q(iKp_q),
+        .iKi_q(iKi_q),
+        .iCal_en(nadc_treat_done),
+        .oCal_d(nvd),
+        .oCal_q(nvq),
+        .oCal_done(npical_done)  
+    );
 
 endmodule

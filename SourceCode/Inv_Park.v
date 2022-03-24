@@ -18,8 +18,13 @@ module Inv_Park(
     output reg oIP_done;
     output reg [15:0] oValpha,oVbeta;//有符号类型
 
+    localparam S0 = 2'd0;
+    localparam S1 = 2'd1;
+    localparam S2 = 2'd2;
+
     reg nip_en_pre_state;
-    wire signed [31:0] ntemp_dc,ntemp_qs,ntemp_ds,ntemp_qc;
+    reg [1:0] nstate;
+    reg signed [31:0] ntemp_dc,ntemp_qs,ntemp_ds,ntemp_qc;
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
@@ -30,25 +35,40 @@ module Inv_Park(
         end
     end
 
-    assign ntemp_dc = (iVd * iCos)>>>15;
-    assign ntemp_ds = (iVd * iSin)>>>15;
-    assign ntemp_qc = (iVq * iCos)>>>15;
-    assign ntemp_qs = (iVq * iSin)>>>15;
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
+            ntemp_dc <= 32'd0;
+            ntemp_ds <= 32'd0;
+            ntemp_qc <= 32'd0;
+            ntemp_qs <= 32'd0;
+            nstate <=S0;
             oValpha <= 16'd0;
             oVbeta <= 16'd0;
             oIP_done <= 1'b0;
         end
         else begin
-            if((!nip_en_pre_state) & iIP_en) begin
-                oValpha <= $signed(ntemp_dc[15:0]) - $signed(ntemp_qs[15:0]);
-                oVbeta <= $signed(ntemp_ds[15:0]) + $signed(ntemp_qc[15:0]);
-                oIP_done <= 1'b1;
-            end
-            else begin
-                oIP_done <= 1'b0;
-            end
+            case (nstate)
+                S0: begin
+                    if((!nip_en_pre_state) & iIP_en) begin
+                        ntemp_dc <= (iVd * iCos)>>>15;
+                        ntemp_ds <= (iVd * iSin)>>>15;
+                        ntemp_qc <= (iVq * iCos)>>>15;
+                        ntemp_qs <= (iVq * iSin)>>>15;
+                        nstate <= S1;
+                    end
+                    else begin
+                        oIP_done <= 1'b0;
+                        nstate <= nstate; 
+                    end
+                end
+                S1: begin
+                    nstate <= S0;
+                    oValpha <= $signed(ntemp_dc[15:0]) - $signed(ntemp_qs[15:0]);
+                    oVbeta <= $signed(ntemp_ds[15:0]) + $signed(ntemp_qc[15:0]);
+                    oIP_done <= 1'b1;
+                end
+                default: nstate <= S0;
+            endcase
         end
     end
 

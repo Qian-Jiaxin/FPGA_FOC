@@ -23,7 +23,10 @@ module ADC_DataTreat(
     output wire [11:0] oId_current,oIq_current;
     output wire oDone;
 
+    localparam ADC_CUR_OFFSET = 12'd2047;
+
     wire [11:0] niu,niv;
+    wire signed [11:0] niu_sign,niv_sign;
     wire [11:0] nialpha,nibeta;
     wire nadc124_acquire_done,nc_done;
 
@@ -43,12 +46,14 @@ module ADC_DataTreat(
         .oAcquire_done(nadc124_acquire_done)
     );
 
+    assign niu_sign = $signed(niu) - $signed(ADC_CUR_OFFSET);
+    assign niv_sign = $signed(niv) - $signed(ADC_CUR_OFFSET);
     Clark clark(
         .iClk(iClk),
         .iRst_n(iRst_n),
         .iC_en(nadc124_acquire_done),
-        .iIu(niu),
-        .iIv(niv),
+        .iIu(niu_sign),
+        .iIv(niv_sign),
         .oIalpha(nialpha),
         .oIbeta(nibeta),
         .oC_done(nc_done)

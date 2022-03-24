@@ -94,12 +94,23 @@ module ADC124S051(
                     if(nrd_done_pre_state & (!nrd_done)) begin
                         naddr <= ADDR3;
                         nrd_en <= 1'b1;
+                        nstate <= S2;
+                    end
+                    else begin
+                        nrd_en <= 1'b0;
+                        nstate <= nstate; 
+                    end
+                end
+                S2: begin
+                    if(nrd_done_pre_state & (!nrd_done)) begin
+                        naddr <= ADDR2;
+                        nrd_en <= 1'b1;
                         nstate <= S3;
                         oIv <= ndata;
                     end
                     else begin
                         nrd_en <= 1'b0;
-                        nstate <= nstate; 
+                        nstate <= nstate;
                     end
                 end
                 S3: begin
