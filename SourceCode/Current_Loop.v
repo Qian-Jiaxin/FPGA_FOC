@@ -6,10 +6,10 @@ module Current_Loop(
     iCos,
     iId_set,
     iIq_set,
-    iKp_d,
-    iKi_d,
-    iKp_q,
-    iKi_q,
+    iKp_d,  //实际值乘以0.833
+    iKi_d,  //实际值乘以0.833
+    iKp_q,  //实际值乘以0.833
+    iKi_q,  //实际值乘以0.833
     iADC124_MISO,
     oADC124_CS_n,
     oADC124_SCLK,
@@ -24,7 +24,7 @@ module Current_Loop(
     input wire iCL_en;
     input wire [15:0] iSin,iCos;
     input wire [11:0] iId_set,iIq_set;
-    input wire [9:0] iKp_d,iKi_d,iKp_q,iKi_q;
+    input wire [15:0] iKp_d,iKi_d,iKp_q,iKi_q;
     input wire iADC124_MISO;
     output wire oADC124_CS_n;
     output wire oADC124_SCLK;
