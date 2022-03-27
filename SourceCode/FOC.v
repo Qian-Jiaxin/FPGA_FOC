@@ -122,7 +122,7 @@ module FOC(
         .oTx(oTx),
         .oSin(nsin),
         .oCos(ncos),
-        .oWarning(ncdt_warning),
+        // .oWarning(ncdt_warning),
         .oDone(ncdt_done)
     );
 
@@ -133,11 +133,11 @@ module FOC(
         .iSin(nsin),
         .iCos(ncos),
         .iId_set(12'd0),
-        .iIq_set(12'd205),
-        .iKp_d(16'd5),
-        .iKi_d(16'd3925),
-        .iKp_q(16'd5),
-        .iKi_q(16'd3925),
+        .iIq_set(12'd200),
+        .iKp_d(16'd17644),
+        .iKi_d(16'd696),
+        .iKp_q(16'd17644),
+        .iKi_q(16'd696),
         .iADC124_MISO(iADC124_MISO),
         .oADC124_CS_n(oADC124_CS_n),
         .oADC124_SCLK(oADC124_SCLK),

@@ -85,7 +85,7 @@ module Current_Loop_PI(
 
     reg signed [12:0] nerror_d;
     reg signed [12:0] nerror_I_d;
-    reg signed [17:0] ncal_d;
+    reg signed [18:0] ncal_d;
     reg [27:0] ntemp_P_d,ntemp_I_d;
     reg nflag_clamping_d;
     reg nflag_saturation_d;
@@ -96,7 +96,7 @@ module Current_Loop_PI(
             nerror_I_d <= 13'd0;
             ntemp_P_d <= 28'd0;
             ntemp_I_d <= 28'd0;
-            ncal_d <= 18'd0;
+            ncal_d <= 19'd0;
             nflag_clamping_d <= 1'b0;
             nflag_saturation_d <= 1'b0;
             oCal_d <= 16'd0;
@@ -132,18 +132,18 @@ module Current_Loop_PI(
                     end
                 end
                 S3: begin
-                    ntemp_P_d <= (iKp_d * nerror_d)>>>12;
-                    ntemp_I_d <= (iKi_d * nerror_I_d)>>>12;
+                    ntemp_P_d <= (iKp_d * nerror_d)>>>9;
+                    ntemp_I_d <= (iKi_d * nerror_I_d)>>>9;
                 end
                 S4: begin
-                    ncal_d = $signed(ntemp_P_d[15:0]) + $signed(ntemp_I_d[15:0]);
+                    ncal_d = $signed(ntemp_P_d[18:0]) + $signed(ntemp_I_d[18:0]);
                 end
                 S5: begin
-                    if(ncal_d > U_MAX) begin
+                    if(ncal_d >= U_MAX) begin
                         nflag_saturation_d <= 1'b1;
                         oCal_d <= U_MAX;
-                    end 
-                    else if(ncal_d < -U_MAX)begin
+                    end
+                    else if(ncal_d <= -U_MAX)begin
                         nflag_saturation_d <= 1'b1;
                         oCal_d <= -U_MAX;
                     end
@@ -159,7 +159,7 @@ module Current_Loop_PI(
 
     reg signed [12:0] nerror_q;
     reg signed [12:0] nerror_I_q;
-    reg signed [17:0] ncal_q;
+    reg signed [18:0] ncal_q;
     reg [27:0] ntemp_P_q,ntemp_I_q;
     reg nflag_clamping_q;
     reg nflag_saturation_q;
@@ -170,7 +170,7 @@ module Current_Loop_PI(
             nerror_I_q <= 13'd0;
             ntemp_P_q <= 28'd0;
             ntemp_I_q <= 28'd0;
-            ncal_q <= 18'd0;
+            ncal_q <= 19'd0;
             nflag_clamping_q <= 1'b0;
             nflag_saturation_q <= 1'b0;
             oCal_q <= 16'd0;
@@ -206,11 +206,11 @@ module Current_Loop_PI(
                     end
                 end
                 S3: begin
-                    ntemp_P_q <= (iKp_q * nerror_q)>>>12;
-                    ntemp_I_q <= (iKi_q * nerror_I_q)>>>12;
+                    ntemp_P_q <= (iKp_q * nerror_q)>>>9;
+                    ntemp_I_q <= (iKi_q * nerror_I_q)>>>9;
                 end
                 S4: begin
-                    ncal_q = $signed(ntemp_P_q[15:0]) + $signed(ntemp_I_q[15:0]);
+                    ncal_q = $signed(ntemp_P_q[18:0]) + $signed(ntemp_I_q[18:0]);
                 end
                 S5: begin
                     if(ncal_q > U_MAX) begin

@@ -16,7 +16,6 @@ module SVPWM(
     output wire oPWM_u,oPWM_v,oPWM_w;
     output wire oModulate_done;
 
-    reg nas_en,ncw_en,nmp_en;
     wire [2:0] nsector;
     wire [15:0] nv1,nv2,nv3;
     wire nic_done,nas_done,ncw_done;
@@ -203,12 +202,10 @@ module SVPWM_Calculate_Workingtime(
     localparam Sector_6 = 3'd6;
 
     reg ncw_en_pre_state;
-    reg [11:0] nta,ntb,nt0_7;
     reg [1:0] state;
-    reg signed [15:0] ntx,nty;
-    reg [15:0] ntemp_a_cal,ntemp_b_cal,ntemp_c_cal;
-    wire signed [17:0] ntemp_a,ntemp_b,ntemp_c;
-    wire [28:0] nccr_a,nccr_b,nccr_c;
+    reg signed [15:0] nux,nuy;
+    reg [28:0] ntx,nty;
+    reg [13:0] nccr_a,nccr_b,nccr_c;
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
@@ -219,20 +216,12 @@ module SVPWM_Calculate_Workingtime(
         end
     end
 
-    assign ntemp_a = $signed(18'd32767) - ntx - nty;
-    assign ntemp_b = $signed(18'd32767) + ntx - nty;
-    assign ntemp_c = $signed(18'd32767) + ntx + nty;
-    assign nccr_a = (ntemp_a_cal * T)>>17;
-    assign nccr_b = (ntemp_b_cal * T)>>17;
-    assign nccr_c = (ntemp_c_cal * T)>>17;
-
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
-            ntemp_a_cal <= 16'd0;
-            ntemp_b_cal <= 16'd0;
-            ntemp_c_cal <= 16'd0;
-            ntx <= 16'd0;
-            nty <= 16'd0;
+            nux <= 16'd0;
+            nuy <= 16'd0;
+            ntx <= 29'd0;
+            nty <= 29'd0;
             oCCR_a <= 12'd0;
             oCCR_b <= 12'd0;
             oCCR_c <= 12'd0;
@@ -245,32 +234,32 @@ module SVPWM_Calculate_Workingtime(
                     if((!ncw_en_pre_state) & iCW_en) begin
                         case (iSector)
                             Sector_1: begin
-                                ntx <= iV2;
-                                nty <= iV1;
+                                nux <= iV2;
+                                nuy <= iV1;
                             end
                             Sector_2: begin
-                                ntx <= -iV2;
-                                nty <= -iV3;
+                                nux <= -iV2;
+                                nuy <= -iV3;
                             end
                             Sector_3: begin
-                                ntx <= iV1;
-                                nty <= iV3;
+                                nux <= iV1;
+                                nuy <= iV3;
                             end
                             Sector_4: begin
-                                ntx <= -iV1;
-                                nty <= -iV2;
+                                nux <= -iV1;
+                                nuy <= -iV2;
                             end
                             Sector_5: begin
-                                ntx <= iV3;
-                                nty <= iV2;
+                                nux <= iV3;
+                                nuy <= iV2;
                             end
                             Sector_6: begin
-                                ntx <= -iV3;
-                                nty <= -iV1;
+                                nux <= -iV3;
+                                nuy <= -iV1;
                             end
                             default: begin
-                                ntx <= ntx;
-                                nty <= nty; 
+                                nux <= nux;
+                                nuy <= nuy; 
                             end
                         endcase
                         state <= S1;
@@ -281,39 +270,17 @@ module SVPWM_Calculate_Workingtime(
                     end
                 end
                 S1: begin
-                    if(ntemp_a > 17'd65535) begin
-                        ntemp_a_cal <= 16'd65535;
-                    end
-                    else if(ntemp_a < 17'd0) begin
-                        ntemp_a_cal <= 16'd0; 
-                    end
-                    else begin
-                        ntemp_a_cal <= ntemp_a[15:0];
-                    end
-
-                    if(ntemp_b > 17'd65535) begin
-                        ntemp_b_cal <= 16'd65535;
-                    end
-                    else if(ntemp_b < 17'd0) begin
-                        ntemp_b_cal <= 16'd0; 
-                    end
-                    else begin
-                        ntemp_b_cal <= ntemp_b[15:0];
-                    end
-
-                    if(ntemp_c > 17'd65535) begin
-                        ntemp_c_cal <= 16'd65535;
-                    end
-                    else if(ntemp_c < 17'd0) begin
-                        ntemp_c_cal <= 16'd0; 
-                    end
-                    else begin
-                        ntemp_c_cal <= ntemp_c[15:0];
-                    end
-
+                    ntx <= (nux * T)>>15;
+                    nty <= (nuy * T)>>15;
                     state <= S2;
                 end
                 S2: begin
+                    nccr_a <= (T - ntx[12:0] - nty[12:0])>>2;
+                    nccr_b <= (T + ntx[12:0] - nty[12:0])>>2;
+                    nccr_c <= (T + ntx[12:0] + nty[12:0])>>2;
+                    state <= S3;
+                end
+                S3: begin
                     case (iSector)
                         Sector_1: begin
                             oCCR_a <= nccr_a[11:0];
@@ -397,6 +364,8 @@ module SVPWM_Modulate_PWM(
     reg nmp_en_pre_state;
     reg [11:0] ncount; 
     reg [1:0] state;
+    reg [11:0] nccr_a_autoreload,nccr_b_autoreload,nccr_c_autoreload;
+    reg nflag_autoreload;
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
@@ -408,7 +377,33 @@ module SVPWM_Modulate_PWM(
     end
 
     always @(posedge iClk or negedge iRst_n) begin
+        if(!iRst_n) begin
+            nccr_a_autoreload <= 12'd0; 
+            nccr_b_autoreload <= 12'd0; 
+            nccr_c_autoreload <= 12'd0; 
+        end
+        else begin
+            if((!nmp_en_pre_state) & iMP_en) begin
+                nccr_a_autoreload <= iCCR_a;
+                nccr_b_autoreload <= iCCR_b;
+                nccr_c_autoreload <= iCCR_c; 
+            end
+            else if(nflag_autoreload) begin
+                nccr_a_autoreload <= iCCR_a;
+                nccr_b_autoreload <= iCCR_b;
+                nccr_c_autoreload <= iCCR_c; 
+            end
+            else begin
+                nccr_a_autoreload <= nccr_a_autoreload;
+                nccr_b_autoreload <= nccr_b_autoreload;
+                nccr_c_autoreload <= nccr_c_autoreload; 
+            end
+        end
+    end
+
+    always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n)begin
+            nflag_autoreload <= 1'b0;
             ncount <= 11'd0;
             state <= S0;
             oMP_done <= 1'b0;
@@ -420,6 +415,7 @@ module SVPWM_Modulate_PWM(
                         state <= S1;
                     end
                     else begin
+                        nflag_autoreload <= 1'b0;
                         ncount <= 11'd0;
                         oMP_done <= 1'b0;
                         state <= S0;
@@ -427,19 +423,23 @@ module SVPWM_Modulate_PWM(
                 end
                 S1: begin
                     if(ncount == (T>>1)) begin
+                        nflag_autoreload <= 1'b1;
                         state <= S2;
                     end
                     else begin
+                        nflag_autoreload <= 1'b0;
                         ncount <= ncount + 1'd1;
                         oMP_done <= 1'b0; 
                     end
                 end
                 S2: begin
                     if(ncount == 10'd0) begin
+                        nflag_autoreload <= 1'b1;
                         oMP_done <= 1'b1;
                         state <= S1;
                     end
                     else begin
+                        nflag_autoreload <= 1'b0;
                         ncount <= ncount - 1'd1;
                         oMP_done <= 1'b0; 
                     end
@@ -448,8 +448,8 @@ module SVPWM_Modulate_PWM(
             endcase 
         end
     end
-    assign oPWM_u = (ncount >= iCCR_a) ? 1'b1:1'b0;
-    assign oPWM_v = (ncount >= iCCR_b) ? 1'b1:1'b0;
-    assign oPWM_w = (ncount >= iCCR_c) ? 1'b1:1'b0;
+    assign oPWM_u = (ncount >= nccr_a_autoreload) ? 1'b1:1'b0;
+    assign oPWM_v = (ncount >= nccr_b_autoreload) ? 1'b1:1'b0;
+    assign oPWM_w = (ncount >= nccr_c_autoreload) ? 1'b1:1'b0;
 
 endmodule

@@ -26,7 +26,6 @@ module Corder_DataTreat(
     reg [19:0] ntheta_elec;
     reg ncordic_cal_en;
     reg nnikon_rd_done_pre_state;
-    // reg [19:0] ntheta;
     wire [19:0] nrd_data_st;
     wire [15:0] nrd_data_mt;
     wire nnikon_rd_done;
@@ -57,19 +56,16 @@ module Corder_DataTreat(
     assign ntheta_elec_temp = nrd_data_st * POLE_PAIRS;
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
-            // ntheta <= 20'd0;
             ntheta_elec <= 20'd0;
             ncordic_cal_en <= 1'b0;
         end
         else begin
             if((!nnikon_rd_done_pre_state) & nnikon_rd_done) begin
-                // ntheta <= ntheta + 20'd364;
-                ntheta_elec <= ntheta_elec_temp[19:0];
-                // ntheta_elec <= SPECIAL_ANGLE - ntheta_elec_temp[19:0];
+                ntheta_elec <= SPECIAL_ANGLE - ntheta_elec_temp[19:0];
                 ncordic_cal_en <= 1'b1;
             end
             else begin
-                ncordic_cal_en <= 1'b0; 
+                ncordic_cal_en <= 1'b0;
             end
         end
     end
@@ -79,7 +75,6 @@ module Corder_DataTreat(
         .iRst_n(iRst_n),
         .iCordic_en(ncordic_cal_en),
         .iTheta(ntheta_elec),
-        // .iTheta(ntheta),
         .oSin(oSin),
         .oCos(oCos),
         .oCordic_done(oDone)

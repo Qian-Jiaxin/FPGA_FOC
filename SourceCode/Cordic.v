@@ -200,22 +200,22 @@ module Cordic_Single_Phase(
     output reg oCordic_sp_done;
 
     //特殊角度处理
-    localparam rot0 = 18'd131071;
-    localparam rot1 = 18'd77376;
-    localparam rot2 = 18'd40883;
-    localparam rot3 = 18'd20753;
-    localparam rot4 = 18'd10416;
-    localparam rot5 = 18'd5213;
-    localparam rot6 = 18'd2607;
-    localparam rot7 = 18'd1303;
-    localparam rot8 = 18'd651;
-    localparam rot9 = 18'd325;
-    localparam rot10 = 18'd163;
-    localparam rot11 = 18'd81;
-    localparam rot12 = 18'd40;
-    localparam rot13 = 18'd20;
-    localparam rot14 = 18'd10;
-    localparam rot15 = 18'd4;
+    localparam rot0 = $signed(18'd131071);
+    localparam rot1 = $signed(18'd77376);
+    localparam rot2 = $signed(18'd40883);
+    localparam rot3 = $signed(18'd20753);
+    localparam rot4 = $signed(18'd10416);
+    localparam rot5 = $signed(18'd5213);
+    localparam rot6 = $signed(18'd2607);
+    localparam rot7 = $signed(18'd1303);
+    localparam rot8 = $signed(18'd651);
+    localparam rot9 = $signed(18'd325);
+    localparam rot10 = $signed(18'd163);
+    localparam rot11 = $signed(18'd81);
+    localparam rot12 = $signed(18'd40);
+    localparam rot13 = $signed(18'd20);
+    localparam rot14 = $signed(18'd10);
+    localparam rot15 = $signed(18'd4);
 
     //状态机
     localparam S0 = 4'b0000;

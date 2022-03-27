@@ -16,7 +16,7 @@ module Inv_Park(
     input wire signed [15:0] iSin,iCos;
     input wire signed [15:0] iVd,iVq;
     output reg oIP_done;
-    output reg [15:0] oValpha,oVbeta;//有符号类型
+    output reg signed [15:0] oValpha,oVbeta;//有符号类型
 
     localparam S0 = 2'd0;
     localparam S1 = 2'd1;
@@ -58,7 +58,7 @@ module Inv_Park(
                     end
                     else begin
                         oIP_done <= 1'b0;
-                        nstate <= nstate; 
+                        nstate <= nstate;
                     end
                 end
                 S1: begin

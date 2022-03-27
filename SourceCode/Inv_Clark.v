@@ -13,7 +13,7 @@ module Inv_Clark(
     input wire iRst_n;
     input wire iIC_en;
     input wire signed [15:0] iValpha,iVbeta;
-    output reg [15:0] oV1,oV2,oV3;
+    output reg signed [15:0] oV1,oV2,oV3;
     output reg oIC_done;
 
     localparam num_sqrt3_2 = 10'd886;   //sqrt(3)/2 * (2^10-1)
