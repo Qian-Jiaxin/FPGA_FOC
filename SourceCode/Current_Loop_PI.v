@@ -24,15 +24,14 @@ module Current_Loop_PI(
     output reg signed [15:0] oCal_d,oCal_q;
     output reg oCal_done;
 
-    localparam U_MAX = $signed(16'd32767);
-    localparam I_MAX = $signed(12'd2047);
+    localparam U_MAX = 16'sd5000;
+    localparam I_MAX = 12'sd2047;
 
     localparam S0 = 3'd0;
     localparam S1 = 3'd1;
     localparam S2 = 3'd2;
     localparam S3 = 3'd3;
     localparam S4 = 3'd4;
-    localparam S5 = 3'd5;
 
     reg ncal_en_pre_state;
     reg [2:0] nstate;
@@ -72,10 +71,7 @@ module Current_Loop_PI(
                     nstate <= S4; 
                 end
                 S4: begin
-                    nstate <= S5; 
-                end
-                S5: begin
-                    nstate <= S0;
+                    nstate <= S0; 
                     oCal_done <= 1'b1; 
                 end
                 default: nstate <= S0;
@@ -83,20 +79,22 @@ module Current_Loop_PI(
         end
     end
 
-    reg signed [12:0] nerror_d;
-    reg signed [12:0] nerror_I_d;
-    reg signed [18:0] ncal_d;
-    reg [27:0] ntemp_P_d,ntemp_I_d;
+    reg signed [12:0] nerror_d_temp;
+    reg signed [11:0] nerror_d;
+    reg signed [27:0] ncal_d;
+    reg signed [27:0] nlasttime_I_d;
+    reg signed [27:0] ncal_P_d,ncal_I_d;
     reg nflag_clamping_d;
     reg nflag_saturation_d;
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
-            nerror_d <= 13'd0;
-            nerror_I_d <= 13'd0;
-            ntemp_P_d <= 28'd0;
-            ntemp_I_d <= 28'd0;
-            ncal_d <= 19'd0;
+            nerror_d_temp <= 13'd0;
+            nerror_d <= 12'd0;
+            ncal_P_d <= 28'd0;
+            ncal_I_d <= 28'd0;
+            nlasttime_I_d <= 28'd0;
+            ncal_d <= 28'd0;
             nflag_clamping_d <= 1'b0;
             nflag_saturation_d <= 1'b0;
             oCal_d <= 16'd0;
@@ -105,51 +103,41 @@ module Current_Loop_PI(
             case (nstate)
                 S0: begin
                     if((!ncal_en_pre_state) & iCal_en) begin
-                        nerror_d <= iTarget_d - iCurrent_d;
-                    end
-                    else begin
-                        nerror_d <= nerror_d; 
+                        nerror_d_temp <= iTarget_d - iCurrent_d;
                     end
                 end
                 S1: begin
-                    if(nerror_d > I_MAX) begin
+                    if(nerror_d_temp[12:11] == 2'b01) begin
                         nerror_d <= I_MAX;
                     end
-                    else if(nerror_d < -I_MAX) begin
+                    else if(nerror_d_temp[12:11] == 2'b10) begin
                         nerror_d <= -I_MAX;
                     end 
                     else begin
-                        nerror_d <= nerror_d; 
+                        nerror_d <= nerror_d_temp[11:0]; 
                     end
-                    nflag_clamping_d <= (nerror_d[12] == oCal_d[15]) & nflag_saturation_d;
                 end
                 S2: begin
-                    if(!nflag_clamping_d) begin
-                        nerror_I_d <= nerror_I_d + nerror_d;
-                    end
-                    else begin
-                        nerror_I_d <= nerror_I_d;
-                    end
+                    ncal_P_d <= (iKp_d * nerror_d);
+                    ncal_I_d <= (iKi_d * nerror_d);
+                    nflag_clamping_d <= !((nerror_d[11] ^~ ncal_d[27]) && nflag_saturation_d);
                 end
                 S3: begin
-                    ntemp_P_d <= (iKp_d * nerror_d)>>>9;
-                    ntemp_I_d <= (iKi_d * nerror_I_d)>>>9;
+                    nlasttime_I_d <= nlasttime_I_d + (ncal_I_d & {28{nflag_clamping_d}});
+                    ncal_d <= ncal_P_d + nlasttime_I_d + (ncal_I_d & {28{nflag_clamping_d}});
                 end
                 S4: begin
-                    ncal_d = $signed(ntemp_P_d[18:0]) + $signed(ntemp_I_d[18:0]);
-                end
-                S5: begin
-                    if(ncal_d >= U_MAX) begin
+                    if($signed(ncal_d[27:9]) >= U_MAX) begin
                         nflag_saturation_d <= 1'b1;
                         oCal_d <= U_MAX;
                     end
-                    else if(ncal_d <= -U_MAX)begin
+                    else if($signed(ncal_d[27:9]) <= -U_MAX)begin
                         nflag_saturation_d <= 1'b1;
                         oCal_d <= -U_MAX;
                     end
                     else begin
                         nflag_saturation_d <= 1'b0;
-                        oCal_d <= {ncal_d[17],ncal_d[14:0]};
+                        oCal_d <= ncal_d[24:9];
                     end
                 end
                 default: ;
@@ -157,20 +145,22 @@ module Current_Loop_PI(
         end
     end
 
-    reg signed [12:0] nerror_q;
-    reg signed [12:0] nerror_I_q;
-    reg signed [18:0] ncal_q;
-    reg [27:0] ntemp_P_q,ntemp_I_q;
+    reg signed [12:0] nerror_q_temp;
+    reg signed [11:0] nerror_q;
+    reg signed [27:0] ncal_q;
+    reg signed [27:0] nlasttime_I_q;
+    reg signed [27:0] ncal_P_q,ncal_I_q;
     reg nflag_clamping_q;
     reg nflag_saturation_q;
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
-            nerror_q <= 13'd0;
-            nerror_I_q <= 13'd0;
-            ntemp_P_q <= 28'd0;
-            ntemp_I_q <= 28'd0;
-            ncal_q <= 19'd0;
+            nerror_q_temp <= 13'd0;
+            nerror_q <= 12'd0;
+            ncal_P_q <= 28'd0;
+            ncal_I_q <= 28'd0;
+            nlasttime_I_q <= 28'd0;
+            ncal_q <= 28'd0;
             nflag_clamping_q <= 1'b0;
             nflag_saturation_q <= 1'b0;
             oCal_q <= 16'd0;
@@ -179,51 +169,41 @@ module Current_Loop_PI(
             case (nstate)
                 S0: begin
                     if((!ncal_en_pre_state) & iCal_en) begin
-                        nerror_q <= iTarget_q - iCurrent_q;
-                    end
-                    else begin
-                        nerror_q <= nerror_q; 
+                        nerror_q_temp <= iTarget_q - iCurrent_q;
                     end
                 end
                 S1: begin
-                    if(nerror_q > I_MAX) begin
+                    if(nerror_q_temp[12:11] == 2'b01) begin
                         nerror_q <= I_MAX;
                     end
-                    else if(nerror_q < -I_MAX) begin
+                    else if(nerror_q_temp[12:11] == 2'b10) begin
                         nerror_q <= -I_MAX;
                     end 
                     else begin
-                        nerror_q <= nerror_q; 
+                        nerror_q <= nerror_q_temp[11:0]; 
                     end
-                    nflag_clamping_q <= (nerror_q[12] == oCal_q[15]) & nflag_saturation_q;
                 end
                 S2: begin
-                    if(!nflag_clamping_q) begin
-                        nerror_I_q <= nerror_I_q + nerror_q;
-                    end
-                    else begin
-                        nerror_I_q <= nerror_I_q;
-                    end
+                    ncal_P_q <= (iKp_q * nerror_q);
+                    ncal_I_q <= (iKi_q * nerror_q);
+                    nflag_clamping_q <= !((nerror_q[11] ^~ ncal_q[27]) && nflag_saturation_q);
                 end
                 S3: begin
-                    ntemp_P_q <= (iKp_q * nerror_q)>>>9;
-                    ntemp_I_q <= (iKi_q * nerror_I_q)>>>9;
+                    nlasttime_I_q <= nlasttime_I_q + (ncal_I_q & {28{nflag_clamping_q}});
+                    ncal_q <= ncal_P_q + nlasttime_I_q + (ncal_I_q & {28{nflag_clamping_q}});
                 end
                 S4: begin
-                    ncal_q = $signed(ntemp_P_q[18:0]) + $signed(ntemp_I_q[18:0]);
-                end
-                S5: begin
-                    if(ncal_q > U_MAX) begin
+                    if($signed(ncal_q[27:9]) >= U_MAX) begin
                         nflag_saturation_q <= 1'b1;
                         oCal_q <= U_MAX;
-                    end 
-                    else if(ncal_q < -U_MAX)begin
+                    end
+                    else if($signed(ncal_q[27:9]) <= -U_MAX)begin
                         nflag_saturation_q <= 1'b1;
                         oCal_q <= -U_MAX;
                     end
                     else begin
                         nflag_saturation_q <= 1'b0;
-                        oCal_q <= {ncal_q[17],ncal_q[14:0]};
+                        oCal_q <= ncal_q[24:9];
                     end
                 end
                 default: ;

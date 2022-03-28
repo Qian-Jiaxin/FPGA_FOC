@@ -2,27 +2,22 @@ module ADC124S051(
     iClk,//100M
     iRst_n,
     iAcquireCurrent_en,
-    // iAcquireVoltage_en,
     iMISO,
     oCS_n,
     oSCLK,
     oMOSI,
     oIu,
     oIv,
-    // oUu,
-    // oUv,
     oAcquire_done
 );
     input wire iClk;
     input wire iRst_n;
     input wire iAcquireCurrent_en;
-    // input wire iAcquireVoltage_en;
     input wire iMISO;
     output wire oCS_n;
     output wire oSCLK;
     output wire oMOSI;
     output reg [11:0] oIu,oIv;
-    // output reg [11:0] oUu,oUv;
     output reg oAcquire_done;
 
     localparam ADDR0 = 2'b00;
@@ -40,7 +35,6 @@ module ADC124S051(
     localparam S7 = 3'b111;
 
     reg nacquirecurrent_en_pre_state;
-    // reg nacquirevoltage_en_pre_state;
     reg nrd_done_pre_state;
     reg nrd_en;
     reg [1:0] naddr;
@@ -51,12 +45,10 @@ module ADC124S051(
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
             nacquirecurrent_en_pre_state <= 1'b0;
-            // nacquirevoltage_en_pre_state <= 1'b0;
             nrd_done_pre_state <= 1'b0;
         end
         else begin
             nacquirecurrent_en_pre_state <= iAcquireCurrent_en; 
-            // nacquirevoltage_en_pre_state <= iAcquireVoltage_en; 
             nrd_done_pre_state <= nrd_done;
         end
     end
@@ -68,8 +60,6 @@ module ADC124S051(
             nstate <= S0;
             oIu <= 12'd0;
             oIv <= 12'd0;
-            // oUu <= 12'd0;
-            // oUv <= 12'd0;
             oAcquire_done <= 1'b0;
         end
         else begin
@@ -80,11 +70,6 @@ module ADC124S051(
                         nrd_en <= 1'b1;
                         nstate <= S1; 
                     end
-                    // else if((!nacquirevoltage_en_pre_state) & iAcquireVoltage_en) begin
-                    //     naddr <= ADDR0;
-                    //     nrd_en <= 1'b1;
-                    //     nstate <= S4; 
-                    // end
                     else begin
                         nstate <= nstate;
                         oAcquire_done <= 1'b0;
@@ -95,6 +80,7 @@ module ADC124S051(
                         naddr <= ADDR3;
                         nrd_en <= 1'b1;
                         nstate <= S2;
+                        oIu <= ndata;
                     end
                     else begin
                         nrd_en <= 1'b0;
@@ -103,20 +89,8 @@ module ADC124S051(
                 end
                 S2: begin
                     if(nrd_done_pre_state & (!nrd_done)) begin
-                        naddr <= ADDR2;
-                        nrd_en <= 1'b1;
-                        nstate <= S3;
-                        oIv <= ndata;
-                    end
-                    else begin
-                        nrd_en <= 1'b0;
-                        nstate <= nstate;
-                    end
-                end
-                S3: begin
-                    if(nrd_done_pre_state & (!nrd_done)) begin
                         nstate <= S0;
-                        oIu <= ndata;
+                        oIv <= ndata;
                         oAcquire_done <= 1'b1;
                     end
                     else begin
@@ -124,29 +98,6 @@ module ADC124S051(
                         nstate <= nstate;
                     end
                 end
-                // S4: begin
-                //     if(nrd_done_pre_state & (!nrd_done)) begin
-                //         naddr <= ADDR1;
-                //         nrd_en <= 1'b1;
-                //         nstate <= S3;
-                //         oUv <= ndata;
-                //     end
-                //     else begin
-                //         nrd_en <= 1'b0;
-                //         nstate <= nstate; 
-                //     end
-                // end
-                // S5: begin
-                //     if(nrd_done_pre_state & (!nrd_done)) begin
-                //         nstate <= S0;
-                //         oUu <= ndata;
-                //         oAcquire_done <= 1'b1;
-                //     end
-                //     else begin
-                //         nrd_en <= 1'b0;
-                //         nstate <= nstate;
-                //     end
-                // end
                 default: nstate <= S0;
             endcase
         end

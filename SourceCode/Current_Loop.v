@@ -32,16 +32,28 @@ module Current_Loop(
     output wire oPWM_u,oPWM_v,oPWM_w;
     output wire oModulate_done;
 
-    wire npical_en;
-    wire [15:0] nvd,nvq;
-    wire [15:0] nvalpha,nvbeta;
-    wire [11:0] nid_current,niq_current;
+    wire ncl_en;
+    wire signed [15:0] nvd,nvq;
+    wire signed [15:0] nvalpha,nvbeta;
+    wire signed [11:0] nid_current,niq_current;
     wire nip_done,nadc_treat_done,npical_done;
 
-    // assign nvd = 16'd0;
-    // assign nvq = 16'd1000;
+    assign ncl_en = iCL_en | oModulate_done;
+    ADC_DataTreat adc_treat(
+        .iClk(iClk),
+        .iRst_n(iRst_n),
+        .iEn(ncl_en),
+        .iSin(iSin),
+        .iCos(iCos),
+        .iADC124_MISO(iADC124_MISO),
+        .oADC124_CS_n(oADC124_CS_n),
+        .oADC124_SCLK(oADC124_SCLK),
+        .oADC124_MOSI(oADC124_MOSI),
+        .oId_current(nid_current),
+        .oIq_current(niq_current),
+        .oDone(nadc_treat_done)
+    );
 
-    assign npical_en = iCL_en | oModulate_done;
     Current_Loop_PI pi(
         .iClk(iClk),
         .iRst_n(iRst_n),
@@ -53,7 +65,7 @@ module Current_Loop(
         .iCurrent_q(niq_current),
         .iKp_q(iKp_q),
         .iKi_q(iKi_q),
-        .iCal_en(npical_en),
+        .iCal_en(nadc_treat_done),
         .oCal_d(nvd),
         .oCal_q(nvq),
         .oCal_done(npical_done)
@@ -82,21 +94,6 @@ module Current_Loop(
         .oPWM_v(oPWM_v),
         .oPWM_w(oPWM_w),
         .oModulate_done(oModulate_done)
-    );
-
-    ADC_DataTreat adc_treat(
-        .iClk(iClk),
-        .iRst_n(iRst_n),
-        .iEn(oModulate_done),
-        .iSin(iSin),
-        .iCos(iCos),
-        .iADC124_MISO(iADC124_MISO),
-        .oADC124_CS_n(oADC124_CS_n),
-        .oADC124_SCLK(oADC124_SCLK),
-        .oADC124_MOSI(oADC124_MOSI),
-        .oId_current(nid_current),
-        .oIq_current(niq_current),
-        .oDone(nadc_treat_done)
     );
 
 endmodule
