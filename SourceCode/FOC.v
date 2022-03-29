@@ -37,15 +37,15 @@ module FOC(
     output wire oPWM_u,oPWM_v,oPWM_w;
     output wire oSD_u_n,oSD_v_n,oSD_w_n;
 
-    localparam S0 = 2'd0;
-    localparam S1 = 2'd1;
-    localparam S2 = 2'd2;
-    localparam S3 = 2'd3;
+    localparam S0 = 1'd0;
+    localparam S1 = 1'd1;
 
-    reg [1:0] nstate;
-    reg ncdt_en,ncl_en;
-    wire ncdt_done,nmodulate_done;
+    reg nstate;
+    reg ncl_en;
+    wire nmodulate_done;
     wire [15:0] nsin,ncos;
+    wire [12:0] nspeed;
+    wire [11:0] niq;
     wire ncdt_warning;
     wire nclk_100m;
     wire npll_locked;
@@ -56,51 +56,24 @@ module FOC(
 
     always @(posedge nclk_100m or negedge iRst_n) begin
         if(!iRst_n) begin
-            ncdt_en <= 1'b0;
             ncl_en <= 1'b0;
             nstate <= S0;
         end
         else begin
             case (nstate)
                 S0: begin
-                    ncdt_en <= 1'b0;
-                    ncl_en <= 1'b0;
-                    nstate <= S1;
-                end
-                S1: begin
                     if(npll_locked) begin
-                        ncdt_en <= 1'b1;
-                        ncl_en <= 1'b0;
-                        nstate <= S2;
+                        ncl_en <= 1'b1;
+                        nstate <= S1;
                     end
                     else begin
-                        ncdt_en <= ncdt_en;
                         ncl_en <= ncl_en;
                         nstate <= nstate;
                     end
                 end
-                S2: begin
-                    if(ncdt_done) begin
-                        ncdt_en <= 1'b0;
-                        ncl_en <= 1'b1;
-                        nstate <= S3;
-                    end
-                    else
-                    begin
-                        ncdt_en <= 1'b0;
-                        ncl_en <= 1'b0;
-                        nstate <= nstate; 
-                    end
-                end
-                S3: begin
-                    if(nmodulate_done) begin
-                        ncdt_en <= 1'b1;
-                        // ncl_en <= 1'b1;
-                    end 
-                    else begin
-                        ncdt_en <= 1'b0;
-                        ncl_en <= 1'b0;
-                    end
+                S1: begin
+                    ncl_en <= 1'b0;
+                    nstate <= nstate;
                 end
                 default: nstate <= S0;
             endcase 
@@ -113,27 +86,28 @@ module FOC(
         .locked(npll_locked)
     );
 
-    Corder_DataTreat coder_datatreat(
+    Corder_DataTreat u_coder_datatreat(
         .iClk(nclk_100m),
         .iRst_n(iRst_n),
-        .iEn(ncdt_en),
+        .iEn_Rd(nmodulate_done),
         .iRx(iRx),
         .oDir(oDir),
         .oTx(oTx),
         .oSin(nsin),
         .oCos(ncos),
+        .oSpeed(nspeed),
         // .oWarning(ncdt_warning),
-        .oDone(ncdt_done)
+        .oDone_Rd(ncdt_done)
     );
 
-    Current_Loop current_loop(
+    Current_Loop u_current_loop(
         .iClk(nclk_100m),
         .iRst_n(iRst_n),
         .iCL_en(ncl_en),
         .iSin(nsin),
         .iCos(ncos),
-        .iId_set(12'd300),
-        .iIq_set(12'd0),
+        .iId_set(12'd0),
+        .iIq_set(niq),
         .iKp_d(16'd17653),
         .iKi_d(16'd697),
         .iKp_q(16'd17653),
@@ -146,6 +120,18 @@ module FOC(
         .oPWM_v(oPWM_v),
         .oPWM_w(oPWM_w),
         .oModulate_done(nmodulate_done)
+    );
+
+    Speed_Loop u_speed_loop(
+        .iClk(nclk_100m),
+        .iRst_n(iRst_n),
+        .iSL_en(nmodulate_done),
+        .iSpd_set(13'd200),
+        .iSpd_coder(nspeed),
+        .iKp(16'd1206),
+        .iKi(16'd12),
+        .oIq(niq),
+        // .oSL_done()
     );
 
 endmodule
