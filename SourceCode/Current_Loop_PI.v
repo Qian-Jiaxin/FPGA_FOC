@@ -1,17 +1,17 @@
 module Current_Loop_PI(
     iClk,
     iRst_n,
-    iTarget_d,   //速度环输入或者位置环输入id
-    iCurrent_d,  //ADC采样得到
+    iTarget_d,
+    iCurrent_d,
     iKp_d,
     iKi_d,
-    iTarget_q,   //速度环输入或者位置环输入iq
-    iCurrent_q,  //ADC采样得到
+    iTarget_q,
+    iCurrent_q,
     iKp_q,
     iKi_q,
     iCal_en,
-    oCal_d,      //输出ud
-    oCal_q,      //输出uq
+    oCal_d,
+    oCal_q,
     oCal_done  
 );
     input wire iClk;
@@ -24,7 +24,7 @@ module Current_Loop_PI(
     output reg signed [15:0] oCal_d,oCal_q;
     output reg oCal_done;
 
-    localparam U_MAX = 16'sd5000;
+    localparam U_MAX = 16'sd30000;
     localparam I_MAX = 12'sd2047;
 
     localparam S0 = 3'd0;
@@ -44,6 +44,8 @@ module Current_Loop_PI(
             ncal_en_pre_state <= iCal_en;
         end
     end
+    
+    /***********************状态机管理**********************/
 
     always @(posedge iClk or negedge iRst_n) begin
         if(!iRst_n) begin
@@ -78,6 +80,9 @@ module Current_Loop_PI(
             endcase 
         end
     end
+    /******************************************************/
+
+    /**********************Id->Ud处理**********************/
 
     reg signed [12:0] nerror_d_temp;
     reg signed [11:0] nerror_d;
@@ -145,6 +150,10 @@ module Current_Loop_PI(
         end
     end
 
+    /******************************************************/
+
+    /**********************Iq->Ud处理**********************/
+
     reg signed [12:0] nerror_q_temp;
     reg signed [11:0] nerror_q;
     reg signed [27:0] ncal_q;
@@ -210,5 +219,7 @@ module Current_Loop_PI(
             endcase
         end
     end
+
+    /******************************************************/
 
 endmodule
