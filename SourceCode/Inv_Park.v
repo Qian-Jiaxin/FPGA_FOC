@@ -50,10 +50,10 @@ module Inv_Park(
             case (nstate)
                 S0: begin
                     if((!nip_en_pre_state) & iIP_en) begin
-                        ntemp_dc <= (iVd * iCos)>>>15;
-                        ntemp_ds <= (iVd * iSin)>>>15;
-                        ntemp_qc <= (iVq * iCos)>>>15;
-                        ntemp_qs <= (iVq * iSin)>>>15;
+                        ntemp_dc <= iVd * iCos;
+                        ntemp_ds <= iVd * iSin;
+                        ntemp_qc <= iVq * iCos;
+                        ntemp_qs <= iVq * iSin;
                         nstate <= S1;
                     end
                     else begin
@@ -63,8 +63,8 @@ module Inv_Park(
                 end
                 S1: begin
                     nstate <= S0;
-                    oValpha <= $signed(ntemp_dc[15:0]) - $signed(ntemp_qs[15:0]);
-                    oVbeta <= $signed(ntemp_ds[15:0]) + $signed(ntemp_qc[15:0]);
+                    oValpha <= $signed(ntemp_dc[30:15]) - $signed(ntemp_qs[30:15]);
+                    oVbeta <= $signed(ntemp_ds[30:15]) + $signed(ntemp_qc[30:15]);
                     oIP_done <= 1'b1;
                 end
                 default: nstate <= S0;

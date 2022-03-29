@@ -50,10 +50,10 @@ module Park(
             case (nstate)
                 S0: begin
                     if((!np_en_pre_state) & iP_en) begin
-                        ntemp_ac <= (iIalpha * iCos)>>>15;
-                        ntemp_bc <= (iIbeta * iCos)>>>15;
-                        ntemp_as <= (iIalpha * iSin)>>>15;
-                        ntemp_bs <= (iIbeta * iSin)>>>15;
+                        ntemp_ac <= iIalpha * iCos;
+                        ntemp_bc <= iIbeta * iCos;
+                        ntemp_as <= iIalpha * iSin;
+                        ntemp_bs <= iIbeta * iSin;
                         nstate <= S1;
                     end
                     else begin
@@ -63,8 +63,8 @@ module Park(
                 end
                 S1: begin
                     nstate <= S0;
-                    oId <= $signed(ntemp_ac[11:0]) + $signed(ntemp_bs[11:0]);
-                    oIq <= $signed(ntemp_bc[11:0]) - $signed(ntemp_as[11:0]);
+                    oId <= $signed(ntemp_ac[26:15]) + $signed(ntemp_bs[26:15]);
+                    oIq <= $signed(ntemp_bc[26:15]) - $signed(ntemp_as[26:15]);
                     oP_done <= 1'b1;
                 end
                 default: nstate <= S0;

@@ -49,7 +49,7 @@ module Inv_Clark(
             case (nstate)
                 S0: begin
                     if((!nic_en_pre_state) & iIC_en) begin
-                        ncalout_1 <= (iValpha * $signed({{1'b0},num_sqrt3_2}))>>>10;
+                        ncalout_1 <= iValpha * $signed({{1'b0},num_sqrt3_2});
                         ncalout_2 <= iVbeta>>>1;
                         nstate <= S1;
                     end
@@ -61,8 +61,8 @@ module Inv_Clark(
                 S1: begin
                     nstate <= S0;
                     oV1 <= iVbeta;
-                    oV2 <= $signed(ncalout_1[15:0]) - $signed(ncalout_2[15:0]);
-                    oV3 <= -$signed(ncalout_1[15:0]) - $signed(ncalout_2[15:0]);
+                    oV2 <= $signed(ncalout_1[25:10]) - $signed(ncalout_2[15:0]);
+                    oV3 <= -$signed(ncalout_1[25:10]) - $signed(ncalout_2[15:0]);
                     oIC_done <= 1'b1;
                 end 
                 default: nstate <=S0;

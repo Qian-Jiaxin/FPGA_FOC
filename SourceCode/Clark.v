@@ -47,8 +47,8 @@ module Clark(
             case (nstate)
                 S0: begin
                     if((!nc_en_pre_state) & iC_en) begin
-                        niu_temp <= iIu * $signed({1'b0,num_1_sqrt3})>>>10;
-                        niv_temp <= iIv * $signed({1'b0,num_1_sqrt3})>>>9;
+                        niu_temp <= iIu * $signed({1'b0,num_1_sqrt3});
+                        niv_temp <= iIv * $signed({1'b0,num_1_sqrt3});
                         nstate <= S1;
                     end
                     else begin
@@ -59,7 +59,7 @@ module Clark(
                 S1: begin
                     nstate <= S0;
                     oIalpha <= iIu;
-                    oIbeta  <= $signed(niu_temp[11:0]) + $signed(niv_temp[11:0]);
+                    oIbeta  <= $signed(niu_temp[21:10]) + $signed(niv_temp[20:9]);
                     oC_done <= 1'b1;
                 end
                 default: nstate <= S0;

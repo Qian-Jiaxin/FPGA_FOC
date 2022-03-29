@@ -97,7 +97,7 @@ module FOC(
         .oCos(ncos),
         .oSpeed(nspeed),
         // .oWarning(ncdt_warning),
-        .oDone_Rd(ncdt_done)
+        // .oDone_Rd(ncdt_done)
     );
 
     Current_Loop u_current_loop(
@@ -126,7 +126,7 @@ module FOC(
         .iClk(nclk_100m),
         .iRst_n(iRst_n),
         .iSL_en(nmodulate_done),
-        .iSpd_set(13'd200),
+        .iSpd_set(-13'd1000),
         .iSpd_coder(nspeed),
         .iKp(16'd1206),
         .iKi(16'd12),
